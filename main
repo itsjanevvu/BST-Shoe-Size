@@ -1,0 +1,241 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <unordered_map>
+using namespace std;
+
+vector<double>duplicates;
+
+
+
+struct Person {
+string name;
+double shoeSize;
+};
+
+
+struct Node{
+  double key;
+  vector<string> names;
+  Node* left;
+  Node* right;
+  
+  };
+
+
+Node* root;
+
+
+//creating new nodes
+Node* CreateNewNode(double shoeSize, string thename){
+  Node* newNode = new Node;
+  newNode->key= shoeSize;
+  newNode->names.push_back(thename);
+  newNode->left=newNode->right=NULL;
+  return newNode; 
+  
+};
+
+
+ //After deleting the duplicate of the nodes, now you're traversing in order and outputting the unique shoe sizes
+void outputUnique(Node*root){
+ 
+  if (root != NULL)
+    {    
+       outputUnique(root->left);
+
+      if(root->names.size()){
+
+        for (auto i = root->names.begin(); i != root->names.end(); ++i){ 
+       
+       cout<<*i<< " has a unique shoe size of " <<root->key<<endl;
+
+        }     
+      outputUnique(root->right);
+
+      }
+
+  
+}
+}
+
+
+//Finding the smallest value in the right subtree of the root to replace the root with
+
+Node* inorderSucc(Node* root){
+
+  Node* current = root;
+  while(current && current->left !=NULL){
+
+    current = current->left;
+  }
+  return current;
+
+  
+};
+
+
+//Deleting a Node
+Node* deleteNode ( Node* root, double shoe){
+   if(shoe< root->key){
+
+     root->left = deleteNode(root->left, shoe);
+     
+   } else if (shoe>root->key){
+      root->right = deleteNode(root->right, shoe);
+
+     
+   } else {
+    //if the root has no children
+     if(root->left ==NULL && root->right==NULL){
+       delete root;
+       root=NULL;
+       return root;
+      //if the root has one child (left subtree); 
+     } else if(root->left ==NULL){
+        Node *temp = root->right;
+       delete root;
+       return temp;
+
+      //if the root has one child (right subtree);    
+     } else if(root->right ==NULL){
+       Node* temp = root->left;
+        delete root;
+        return temp;   
+     }
+
+      //if the root has two children (left & right subtree)
+     Node* temp = inorderSucc(root->right); //find smallest value in right subtree
+     root->key = temp->key; //exachanging values w the smallest value found)
+     root->names = temp->names;
+     root->right = deleteNode(root->right, temp->key);
+     //then call the delete that node);
+
+       
+     }
+
+  return root;
+         
+   }
+  
+
+
+
+//Finding the duplicates of the BST through inorder traversal
+void findDuplicates(Node* root){
+
+
+  if (root != NULL)
+    { 
+    
+        findDuplicates(root->left);
+
+       
+          //if the size of the 
+          if(root->names.size() >1){
+
+            cout<<"Shoe size duplicates "<<root->key<<endl;
+
+            int sizes =root->names.size();
+            duplicates.push_back(root->key);
+            
+          for (int i = 0; i <sizes; i++){
+
+            cout<<root->names[i]<<endl;
+          }
+          
+        }
+        
+        findDuplicates(root->right);
+    }  
+}
+
+
+
+//inserting all the nodes into BST
+Node* insert(Node* root, string name, double shoe){
+
+  //if there does not exist a node, create a new node in that spot
+  if(root ==NULL){
+    
+       root= CreateNewNode(shoe, name);      
+
+    //if key is smaller, traverse left
+    } else if(shoe<root->key){
+     
+         root->left = insert(root->left, name, shoe); 
+
+  //if key is larger, traverse right    
+  } else if (shoe>root->key){
+         root->right = insert(root->right,name, shoe);
+    
+  } else if (shoe == root->key){  
+    root->names.push_back(name);  
+  }
+  return root;   
+  };
+
+
+int main() {
+
+  vector<Person>lines; 
+  //making  the type of the vector to be DataPoint (for each element of the vector, it's a struct)
+  
+  string line;
+  //writing into the file
+  ofstream writeFile("words.txt");
+  //reading from the file
+  ifstream inputFile("words.txt");
+
+  writeFile<<"Ari 7"<<endl<<"Daneil 6"<<endl<<"Jane 5"<<endl<<"Anna 7"<<endl<<"Jeff 7"<<endl<<"Jaleel 14.5"<<endl<<"Ivy 20"<<endl<<"Cynthia 20"<<endl<<"Katie 4"<<"Jason 20"<<endl<<"Jackie 6"<<endl;
+
+  if(!inputFile){
+    cout<<"File failed to open"<<endl;
+    return 1;
+  }
+
+//reading the code line by line
+while(getline(inputFile, line)){
+   string name;
+   double number;
+   Person person;
+  istringstream iss(line);
+   iss>>name>>number;
+   person.name = name;
+    person.shoeSize = number;
+  cout<<"Person Created: "<<name<<" "<<number<<endl;
+  lines.push_back(person);
+  
+}
+
+  inputFile.close();
+
+
+  //Saving the address of the head root node
+  root = insert(root, lines[0].name, lines[0].shoeSize);
+
+
+  //Cycling through the vector of Person structs, and passing them into the insert node function
+  for (auto i = lines.begin()+1; i != lines.end(); ++i){ 
+      insert(root, i->name, i->shoeSize);     
+    
+  } 
+
+
+  //Identifying the duplicates of the function
+    findDuplicates(root);
+
+  //Cycling through the duplicates vector and passing in values to be deleted
+   for (int i=0; i<duplicates.size(); i++){
+      deleteNode(root, duplicates[i]);
+  
+    }
+
+  //Ouputting the unique nodes remaining in the tree
+  outputUnique(root);
+  
+
+
+}
